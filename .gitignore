@@ -1,8 +1,0 @@
-*.vcxproj
-*.vcxproj.*
-*.log
-*.obj
-*.exe
-laba1/Debug/*
-Debug/*
-.vs
