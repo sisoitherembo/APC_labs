@@ -6,9 +6,5 @@
 laba1/Debug/*
 Debug/*
 .vs
-*.1.*
-*.idb
-*.pdb
-*.lastbuildstate
-*.ilk
-**/x64
+**/x64/**
+**/x64/*
