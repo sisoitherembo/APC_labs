@@ -1,13 +1,12 @@
 #include <iostream>
 #include <random>
 #include <ctime>
-const int COUNT = 1000;
+const int COUNT = 10000;
 const int ITERCOUNT = 10000;
 const int RADIUS = 100;
 
-void initializeArray(int** array, int sizeOfArray);
+
 void initializeMatrix(int*** matrix, int rows, int columns);
-void outputArray(int* array, int sizeOfArray);
 void outputMatrix(int** matrix, int rows, int columns);
 int* findOutRowsSums(int** matrix, int rows, int columns);
 int* findOutRowsSumsWO(int** matrix, int rows, int columns);
@@ -27,7 +26,7 @@ int* optionOnCwithoutOptimize(int** matrix, int rows, int columns);
 int main(void) {
 	srand(time(NULL));
 	int* arrayOfSumsC = NULL, * arrayOfSumsAsm = NULL, * arrayOfSumsCwithoutOptimize = NULL, * arrayOfSumsMMX = NULL;
-		int ** matrix = NULL;
+	int ** matrix = NULL;
 	initializeMatrix(&matrix, COUNT, COUNT);
 	printf("Matrix initialized\nStarting computing...\n\n");
 	
@@ -54,14 +53,6 @@ int main(void) {
 
 
 /*---------------FUNCTIONS--------------------*/
-void initializeArray(int** arr, int sizeOfArray)
-{
-	*arr = (int*)malloc(sizeOfArray * sizeof(int));
-	for (int i = 0; i < sizeOfArray; i++) {
-		(*arr)[i] = rand() % RADIUS ;
-	}
-
-}
 
 void initializeMatrix(int*** matrix, int rows, int columns)
 {
@@ -74,13 +65,6 @@ void initializeMatrix(int*** matrix, int rows, int columns)
 	}
 }
 
-void outputArray(int* array, int sizeOfArray)
-{
-	for (int i=0; i< sizeOfArray; i++)
-		std::cout << array[i]<<" ";
-	std::cout << std::endl<< std::endl;
-
-}
 
 void outputMatrix(int** matrix, int rows, int columns)
 {
@@ -182,32 +166,46 @@ int* optionOnMMX(int** matrix, int rows, int columns)
 	int* arrayOfSumsAsm = (int*)malloc(sizeof(int) * rows);
 	clock_t start, end;
 	start = clock();
-	int64_t sourc1, sourc2, sourc3;
-	for (int D = 0; D < ITERCOUNT; D++) {
+
+	int32_t middle = (columns / 2);
+	int D;
+	for ( D = 0; D < ITERCOUNT; D++) {
 		_asm {
-			pxor esi, esi //esi
-			xor edi, edi
-			xor ebx, ebx
 			mov ecx, rows
 			mov ebx, [matrix]
 			mov edi, [arrayOfSumsAsm]
+			mov edx, middle
+			mov esi, 1
+			and esi, edx
+		
 			ROWS:
 				push ecx
 				mov eax, DWORD PTR [ebx]
 				pxor mm7, mm7
-				mov ecx, columns
+				mov ecx, edx
 					COLUMNS :
-					paddb mm7, QWORD PTR [eax]
+					paddd mm7, QWORD PTR [eax]
+					paddd mm7, QWORD PTR [eax + (edx)*4]
 					add eax, 4
 					loop COLUMNS
-				movd QWORD PTR [edi], mm7
+				cmp esi, 1
+				je  ADDITION
+				jmp BACK
+				ADDITION:
+				paddd mm7, QWORD PTR[eax + edx * 4]
+				
+				
+				BACK:
 				pop ecx
+				movd QWORD PTR [edi], mm7
 				add edi, 4
 				add ebx, 4
 				loop ROWS
 			emms
 		}
 	}
+	
+	
 	end = clock();
 	whatTime(start, end, "Assembler : MMX");
 	return arrayOfSumsAsm;
@@ -222,7 +220,7 @@ int* optionOnAsm(int** matrix, int rows, int columns)
 		_asm {
 			xor edx, edx
 			xor esi, esi
-			xor edi, edi
+			xor edi, edi 
 			xor ebx, ebx
 			mov ecx, rows
 			COLUMNS_LOOP :
